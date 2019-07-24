@@ -14,7 +14,7 @@ message_gamble = ["tu as remporté le pari ! tu obtiens ","Une grande victoire p
 anti_spam = 10
 # nb de sec nécessaire entre 2 commandes
 
-TOKEN = "NjAzMjA4ODQxNDEyNDc2OTI5.XTcE5A.LhrQtshs6LFGKGB1dlGhGKpp_HY"
+TOKEN = "*********************************************"
 #le token permet de reconnaitre mon bot
 
 client = discord.Client()
