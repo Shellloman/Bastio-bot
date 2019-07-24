@@ -20,10 +20,11 @@ TOKEN = "*********************************************"
 client = discord.Client()
 @client.event
 async def on_message(message):
-
+message = message.lower()
+# on ne prend que la version miniscule du message
 # pour l'instant chaque commande que le bot detecte commence par if message.con...
 
-	if message.content.startswith('ba.begin') or message.content.startswith('Ba.begin'):
+	if message.content.startswith('ba.begin') 
 	#cette fonction initialise les données dans la bdd
 		ID = message.author.id
 		data = sqlite3.connect('spameurs.db')
@@ -46,7 +47,7 @@ async def on_message(message):
 			msg = "fiche personnage créé !"
 		await client.send_message(message.channel, msg)
 
-	if message.content.startswith('ba.crime') or message.content.startswith('Ba.crime'):
+	if message.content.startswith('ba.crime') 
 		ID = message.author.id
 		data = sqlite3.connect('spameurs.db')
 		c = data.cursor()
@@ -65,7 +66,7 @@ async def on_message(message):
 		data.commit()
 		data.close()
 
-	if message.content.startswith('ba.bal') or message.content.startswith('Ba.bal'):
+	if message.content.startswith('ba.bal') 
 		ID = message.author.id
 		data = sqlite3.connect('spameurs.db')
 		c = data.cursor()
@@ -82,7 +83,7 @@ async def on_message(message):
 		data.commit()
 		data.close()
 
-	if message.content.startswith('ba.gamble') or message.content.startswith('Ba.gamble'):
+	if message.content.startswith('ba.gamble') 
 		valeur = int(message.content[10:])
 		ID = message.author.id
 		data = sqlite3.connect('spameurs.db')
@@ -105,7 +106,7 @@ async def on_message(message):
 		data.commit()
 		data.close()
 
-	if message.content.startswith('ba.buy pickaxe') or message.content.startswith('Ba.buy pickaxe'):
+	if message.content.startswith('ba.buy pickaxe') 
 		ID = message.author.id
 		data = sqlite3.connect('spameurs.db')
 		c = data.cursor()
@@ -115,7 +116,7 @@ async def on_message(message):
 		data.close()
 		await client.send_message(message.channel, "tu as désormais une pioche en plus !")
 
-	if message.content.startswith('ba.mine') or message.content.startswith('Ba.mine'):
+	if message.content.startswith('ba.mine') 
 		ID = message.author.id
 		data = sqlite3.connect('spameurs.db')
 		c = data.cursor()
@@ -143,7 +144,7 @@ async def on_message(message):
 		data.commit()
 		data.close()
 
-	if message.content.startswith('ba.help') or message.content.startswith('Ba.help'):
+	if message.content.startswith('ba.help') 
 		msg = "**Bienvenue dans l'aide de Bastion's gems !** \n Il y a actuellement 6 commandes :\n\
 		*-ba.begin* : permet de d'initialiser la base de donnée\n\
 		*-ba.crime* : permet de récolter entre 5 et 10 :gem:\n\
