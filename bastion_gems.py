@@ -15,9 +15,9 @@ anti_spam = 6
 anti_spam2 = 3
 # nb de sec nécessaire entre 2 commandes
 
-TOKEN = "********************************"
-# ***********************************Bastion's Gems
-# ***********************************Bot_RPG
+TOKEN = "********************"
+# ******************** Bastion's Gems
+# ******************** Bot_RPG
 #le token permet de reconnaitre mon bot
 
 client = discord.Client()
@@ -115,11 +115,11 @@ async def on_message(message):
 		if time[0] < t.time()-anti_spam:
 			c.execute("""SELECT pickaxe FROM inventaire WHERE ID=?""", (ID,))
 			if c.fetchone()[0] >= 1:
-				if r.randint(0,20)==0:
+				if r.randint(0,19)==0:
 					c.execute("""UPDATE inventaire set pickaxe = pickaxe - ? WHERE ID=?""", (1,ID))
 					msg = "pas de chance tu as cassé ta pioche !"
 				else :
-					if r.randint(0,8)==0:
+					if r.randint(0,7)==0:
 						c.execute("""UPDATE inventaire set iron = iron + ? WHERE ID=?""", (1,ID))
 						msg = "tu as obtenue un bloc de iron !"
 					else:
@@ -161,26 +161,41 @@ async def on_message(message):
 
 
 	if message.content.startswith('ba.sell'):
+		ID = message.author.id
 		i = 0
 		content = message.content[8:]
-		while content[i] != " ":
-			i += 1
-		item = content[:i]
-		nb = content[i+1:]
-		mult = 0
-		print(item,nb)
-		if item == "cobblestone":
-			mult = 1
-		elif item =="iron":
-			mult = 10
-		elif item =="gold":
-			mult = 25
-		elif item =="diamond":
-			mult = 50
-		else:
+		item,nb = content.split(" ")
+		try :
+			int(nb)
 			mult = 0
-		gain = int(nb)*mult
-		msg = "tu veux vendre "+nb+" "+item+" pour "+str(gain)+":gem:"
+			print(item,nb)
+			if item == "cobblestone":
+				mult = 1
+			elif item =="iron":
+				mult = 10
+			elif item =="gold":
+				mult = 25
+			elif item =="diamond":
+				mult = 50
+			else:
+				mult = 0
+			if mult != 0 :
+				c.execute("""SELECT {0} FROM inventaire WHERE ID=?""".format(item), (ID,))
+				a = c.fetchone()
+				print(a[0])
+				if int(nb) <= int(a[0]):
+					gain = int(nb)*mult
+					c.execute("""UPDATE inventaire SET {0} = {0} - {1} WHERE ID =? """.format(item,nb),(ID,))
+					c.execute("""UPDATE donnees SET gem = gem + ? WHERE ID=?""",(gain,ID))
+					data.commit()
+					msg = "tu as vendu {0} {1} pour {2} :gem:".format(nb,item,gain)
+				else :
+					msg = "tu n'as pas assez de {0} pour ça !".format(item)
+			else:
+				msg = "commande mal remplis (item)"
+		except ValueError:
+			msg = "commande mal remplis (nombre)"
+			pass
 		await client.send_message(message.channel, msg)
 
 	if message.content.startswith('ba.rebdd') and message.author.id == 141883318915301376 :
@@ -198,3 +213,4 @@ async def on_ready():
 	print('------')
 
 client.run(TOKEN)
+
