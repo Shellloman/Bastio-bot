@@ -1,19 +1,19 @@
-#Bastion BOT
+# Bastion BOT
 Suite au décès de mewna notre bot, aimée de tous sauf lorsqu'elle buggait, nous sommes dans
 l'obligation de créer notre propre bot pour retrouver les services dont nous avons besoin mais
 aussi des nouveaux.
-#Le nom
+# Le nom
 Question triviale mais néamoins importante, le nom du bot. Je laisse libre cours aux propositions.
-#La participation
+# La participation
 A ce jour Shell a déjà commencé à créer une partie du bot et l'a donc mis sur son github.
 Je pense qu'il est important qu'on soit tranparent dans ce qu'on fait et tous les membres sachant
 coder en python sont évidemment les bienvenus pour nous aider à coder ou émettre des
 critiques contructives.
-#Idées sur le fonctionnement général
-#Organisation
+# Idées sur le fonctionnement général
+# Organisation
 Je propose une architecture "modulaire" avec un core qui se charge de lancer les différentes
 parties du bot.
-#Idées de module
+# Idées de module
 Core: Il va se charger de lancer les autres modules
 Rôles: Ce module va se charger de gérer les rôles. Donc de mettre le rôle "joueur" aux
 nouveaux membres mais aussi pour pouvoir en une commande créer un nouveau rôle
