@@ -14,8 +14,8 @@ message_gamble = ["tu as remporté le pari ! tu obtiens ","Une grande victoire p
 anti_spam = 6
 # nb de sec nécessaire entre 2 commandes
 
-TOKEN = "NTM1NTk1Mzc3ODk4ODE1NDk4.XThm3w.reK2RsoN9xQfmrkvrNs57IWBc2M"
-#NjAzMjA4ODQxNDEyNDc2OTI5.XTcE5A.LhrQtshs6LFGKGB1dlGhGKpp_HY Bastion's Gems
+TOKEN = "**************************************"
+#**************************************Bastion's Gems
 #
 #le token permet de reconnaitre mon bot
 
