@@ -160,7 +160,7 @@ async def on_message(message):
 		data.commit()
 
 
-	if message.content.startswith('ba.sell'):
+	if message.content.startswith('ba.sell '):
 		ID = message.author.id
 		i = 0
 		content = message.content[8:]
@@ -196,6 +196,20 @@ async def on_message(message):
 		except ValueError:
 			msg = "commande mal remplis (nombre)"
 			pass
+		await client.send_message(message.channel, msg)
+
+	if message.content.startswith('ba.pay '):
+		ID = message.author.id
+		content = message.content[7:]
+		nom,gain = content.split(" ")
+		if len(nom) == 21 :
+			ID_recu = nom[2:20]
+		elif len(nom) == 22 :
+			ID_recu = nom[3:21]
+		else :
+			ID_recu = "une autre erreur ?"
+		msg = "tu veux donner : "+gain+":gem: à "+nom+" dont l'id est "+ID_recu
+		print(msg)
 		await client.send_message(message.channel, msg)
 
 	if message.content.startswith('ba.rebdd') and message.author.id == 141883318915301376 :
