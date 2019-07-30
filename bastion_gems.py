@@ -19,8 +19,8 @@ couldown_c = 4 # c pour court
 # nb de sec nécessaire entre 2 commandes
 
 TOKEN = open("token.txt","r").read().replace('\n','')
-# NjAzMjA4ODQxNDEyNDc2OTI5.XTlxsQ.A4aLSlCYn9_esWy8O75ENUPJbuU Bastion's Gems
-# NTM1NTk1Mzc3ODk4ODE1NDk4.XTlxgA.E7olRRKMtv5CrMM7wQ1XST9j9Co Bot_RPG
+# ************** Bastion's Gems
+# ************** Bot_RPG
 # le token permet de reconnaitre mon bot
 prefix = open("prefix.txt","r").read().replace('\n','')
 # on récupère le prefix dans un fichier
