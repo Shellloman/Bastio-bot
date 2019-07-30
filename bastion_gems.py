@@ -2,6 +2,9 @@ import discord
 import random as r
 import time as t
 import sqlite3
+from discord.ext import commands
+from discord.ext.commands import Bot
+from discord.utils import get
 
 message_crime = ["You robbed the Society of Schmoogaloo and ended up in a lake,but still managed to steal ",
 "tu as volé une pomme qui vaut ", "tu as gangé le loto ! prends tes ", "j'ai plus d'idée prends ça "]
@@ -10,165 +13,184 @@ message_gamble = ["tu as remporté le pari ! tu obtiens ","Une grande victoire p
 "bravo prends ", "heu.... "]
 # 4 phrases
 # se sont les phrases prononcé par le bot pour plus de diversité
-# il n'y en a pas bcp donc je les laisse directement dans le code
-anti_spam = 6
-anti_spam2 = 3
+couldown_xl = 16
+couldown_l = 8 # l pour long
+couldown_c = 4 # c pour court
 # nb de sec nécessaire entre 2 commandes
 
-TOKEN = "********************"
-# ******************** Bastion's Gems
-# ******************** Bot_RPG
-#le token permet de reconnaitre mon bot
+TOKEN = open("token.txt","r").read().replace('\n','')
+# NjAzMjA4ODQxNDEyNDc2OTI5.XTlxsQ.A4aLSlCYn9_esWy8O75ENUPJbuU Bastion's Gems
+# NTM1NTk1Mzc3ODk4ODE1NDk4.XTlxgA.E7olRRKMtv5CrMM7wQ1XST9j9Co Bot_RPG
+# le token permet de reconnaitre mon bot
+prefix = open("prefix.txt","r").read().replace('\n','')
+# on récupère le prefix dans un fichier
+client = commands.Bot(command_prefix = "{0}".format(prefix))
 
-client = discord.Client()
-@client.event
-async def on_message(message):
-	message.content = message.content.lower()
-# on ne prend que la version miniscule du message
-# pour l'instant chaque commande que le bot detecte commence par if message.con...
+data = sqlite3.connect('players.db')
+c = data.cursor()
+# on ouvre la base de donnée une fois au lancement du Bot
 
-	data = sqlite3.connect('players.db')
-	c = data.cursor()
-	# on ouvre la base de donnée une fois au lancement du Bot
-	if message.content.startswith('ba.begin'):
-	#cette fonction initialise les données dans la bdd
-		ID = message.author.id
-		c.execute("""SELECT ID FROM donnees WHERE ID=?""", (ID,))
-		rep = c.fetchone()
-		print (rep)
-		if rep != None :
-			msg = "personnage déjà créé !"
-		else :
-			gem = 10
-			time = t.time()-anti_spam
-			c.execute("""INSERT INTO donnees VALUES(?,?,?)""",(ID,gem,time))
-			# on injecte 3 données l'ID discord, le nombre de gems,et la date de
-			# la dernière commande, qui permet de vérifier de faire mon anti spam
-			c.execute("""INSERT INTO inventaire VALUES(?,?,?,?,?,?,?,?,?,?,?)""",(ID,0,0,0,0,0,0,0,0,0,0))
-			data.commit()
-			msg = "fiche personnage créé !"
-		await client.send_message(message.channel, msg)
+def spam(ID,couldown):
+	c.execute("""SELECT time FROM donnees WHERE ID=?""", (ID,))
+	time = c.fetchone()
+	# on récupère le la date de la dernière commande
+	return(time[0] < t.time()-couldown)
 
-	if message.content.startswith('ba.crime'):
-		ID = message.author.id
-		c.execute("""SELECT time FROM donnees WHERE ID=?""", (ID,))
-		time = c.fetchone()
-		# on récupère le la date de la dernière commande
-		if time[0] < t.time()-anti_spam:
-		# si 10 sec c'est écoulé depuis alors on peut en  faire une nouvelle
-			gain = r.randint(5,10)
-			msg = message_crime[r.randint(0,3)]+str(gain)+":gem:"
+@client.command(pass_context=True)
+async def begin(ctx):
+	"""permet d'initialiser la bdd, nécessaire pour pouvoir utiliser le bot """
+	ID = ctx.message.author.id
+	c.execute("""SELECT ID FROM donnees WHERE ID=?""", (ID,))
+	rep = c.fetchone()
+	if rep != None :
+		msg = "personnage déjà créé !"
+	else :
+		gem = 10
+		time = t.time()-anti_spam
+		c.execute("""INSERT INTO donnees VALUES(?,?,?)""",(ID,gem,time))
+		# on injecte 3 données l'ID discord, le nombre de gems,et la date de
+		# la dernière commande, qui permet de vérifier de faire mon anti spam
+		c.execute("""INSERT INTO inventaire VALUES(?,?,?,?,?,?,?,?,?,?,?)""",(ID,0,0,0,0,0,0,0,0,0,0))
+		data.commit()
+		msg = "fiche personnage créé !"
+	await ctx.message.channel.send(msg)
+
+@client.command(pass_context=True)
+async def prefix(ctx,gprefix):
+	"""permet de changer de préfix, utilisable uniquement par certaine personne. Il est necessaire de redemarrer le bot après. """
+	ID = ctx.message.author.id
+	if ID == 141883318915301376 or ID ==130454275699507201 or ID == 129362501187010561 :
+	#        shelll                     gnouf                        azer
+		f_prefix = open("prefix.txt","w")
+		f_prefix.write(gprefix)
+		f_prefix.close()
+		global client
+		client = commands.Bot(command_prefix = "{0}".format(gprefix))
+		# ne marche pas pour l'instant
+		msg = "le prefix est désomrais {0}".format(gprefix)
+	else :
+		msg = "tu n'es pas autorisé à faire ça"
+	await ctx.message.channel.send(msg)
+
+@client.command(pass_context=True)
+async def crime(ctx):
+	"""commets un crime et gagne des gems !"""
+	ID = ctx.message.author.id
+	if spam(ID,couldown_l):
+	# si 10 sec c'est écoulé depuis alors on peut en  faire une nouvelle
+		gain = r.randint(5,10)
+		msg = message_crime[r.randint(0,3)]+str(gain)+":gem:"
+		c.execute("""UPDATE donnees SET gem = gem + ? WHERE ID = ?""",(gain,ID))
+		c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
+		data.commit()
+	else:
+		msg = "il faut attendre "+str(couldown_l)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
+
+@client.command(pass_context=True)
+async def bal(ctx):
+	"""êtes vous riche ou pauvre ? bal vous le dit """
+	ID = ctx.message.author.id
+	if spam(ID,couldown_c):
+		c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
+		data.commit()
+		c.execute("""SELECT gem FROM donnees WHERE ID=?""", (ID,))
+		gem = c.fetchone()
+		msg = "tu as actuellement : "+str(gem[0])+" :gem: !"
+	else:
+		msg = "il faut attendre "+str(couldown_c)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
+
+
+@client.command(pass_context=True)
+async def gamble(ctx,valeur):
+	"""| gamble [valeur] |\n avez vous l'ame d'un parieur ?  """
+	valeur = int(valeur)
+	ID = ctx.message.author.id
+	if spam(ID,couldown_xl):
+		if r.randint(0,3) == 0:
+			gain = valeur*3
+			# l'espérence est de 0 sur la gamble
+			msg = message_gamble[r.randint(0,3)]+str(gain)+":gem:"
 			c.execute("""UPDATE donnees SET gem = gem + ? WHERE ID = ?""",(gain,ID))
-			c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
+			data.commit()
 		else:
-			msg = "il faut attendre "+str(anti_spam)+" secondes entre chaque commande !"
-		await client.send_message(message.channel, msg)
+			c.execute("""UPDATE donnees SET gem = gem - ? WHERE ID = ?""",(valeur,ID))
+			data.commit()
+			msg = "dommage tu as perdu "+str(valeur)+":gem:"
+		c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
 		data.commit()
+	else:
+		msg = "il faut attendre "+str(couldown_xl)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
 
-	if message.content.startswith('ba.bal'):
-		ID = message.author.id
-		c.execute("""SELECT time FROM donnees WHERE ID=?""", (ID,))
-		time = c.fetchone()
-		if time[0] < t.time()-anti_spam2:
-			c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
-			c.execute("""SELECT gem FROM donnees WHERE ID=?""", (ID,))
-			gem = c.fetchone()
-			msg = "tu as actuellement : "+str(gem[0])+" :gem: !"
+
+@client.command(pass_context=True)
+async def buy (ctx,item,nb):
+	"""permet d'acheter une pioche"""
+	ID = ctx.message.author.id
+	if spam(ID,couldown_l):
+		nb = int(nb)
+		c.execute("""UPDATE donnees SET gem = gem - ? WHERE ID = ?""",(20*nb,ID))
+		c.execute("""UPDATE inventaire SET pickaxe = pickaxe + ? WHERE ID = ?""",(nb,ID))
+		data.commit()
+		msg = "tu as désormais {0} pioche.s en plus !".format(nb)
+	else :
+		msg = "il faut attendre "+str(couldown_l)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
+
+@client.command(pass_context=True)
+async def mine (ctx):
+	""" minez compagnons !! vous pouvez récuperer 1 à 2 cobblestone.s ou 1 d'iron"""
+	ID = ctx.message.author.id
+	if spam(ID,couldown_l):
+		c.execute("""SELECT pickaxe FROM inventaire WHERE ID=?""", (ID,))
+		if c.fetchone()[0] >= 1:
+			if r.randint(0,19)==0:
+				c.execute("""UPDATE inventaire set pickaxe = pickaxe - ? WHERE ID=?""", (1,ID))
+				data.commit()
+				msg = "pas de chance tu as cassé ta pioche !"
+			else :
+				if r.randint(0,7)==0:
+					c.execute("""UPDATE inventaire set iron = iron + ? WHERE ID=?""", (1,ID))
+					data.commit()
+					msg = "tu as obtenue un bloc de iron !"
+				else:
+					c.execute("""UPDATE inventaire set cobblestone = cobblestone + ? WHERE ID=?""", (r.randint(1,2),ID))
+					data.commit()
+					msg = "tu as obtenue un bloc.s de cobblestone.s !"
 		else:
-			msg = "il faut attendre "+str(anti_spam2)+" secondes entre chaque commande !"
-		await client.send_message(message.channel, msg)
+			msg = "il faut acheter une pioche !"
+		c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
 		data.commit()
+	else:
+		msg = "il faut attendre "+str(couldown_l)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
 
-
-	if message.content.startswith('ba.gamble'):
-		valeur = int(message.content[10:])
-		ID = message.author.id
-		c.execute("""SELECT time FROM donnees WHERE ID=?""", (ID,))
-		time = c.fetchone()
-		if time[0] < t.time()-anti_spam:
-			if r.randint(0,3) == 0:
-				gain = valeur*3
-				# l'espérence est de 0 sur la gamble
-				msg = message_gamble[r.randint(0,3)]+str(gain)+":gem:"
-				c.execute("""UPDATE donnees SET gem = gem + ? WHERE ID = ?""",(gain,ID))
-			else:
-				c.execute("""UPDATE donnees SET gem = gem - ? WHERE ID = ?""",(valeur,ID))
-				msg = "dommage tu as perdu "+str(valeur)+":gem:"
-			c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
-		else:
-			msg = "il faut attendre "+str(anti_spam)+" secondes entre chaque commande !"
-		await client.send_message(message.channel, msg)
+@client.command(pass_context=True)
+async def inv (ctx):
+	"""permet de voir ce que vous avez dans le ventre !"""
+	ID = ctx.message.author.id
+	if spam(ID,couldown_c):
+		c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
 		data.commit()
+		c.execute("""SELECT pickaxe,cobblestone,iron,gold,diamond FROM inventaire WHERE ID=?""", (ID,))
+		inv = c.fetchone()
+		print (inv)
+		msg = "**ton inventaire**\n```-pickaxe.s : "+str(inv[0])+"\n-cobblestone.s : "+str(inv[1])+"\n-iron.s : "+str(inv[2])+"\n-gold: "+str(inv[3])+"\n-diamond : "+str(inv[4])+"```"
+	else:
+		msg = "il faut attendre "+str(couldown_c)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
 
 
-	if message.content.startswith('ba.buy pickaxe'):
-		ID = message.author.id
-		c.execute("""UPDATE donnees SET gem = gem - ? WHERE ID = ?""",(20,ID))
-		c.execute("""UPDATE inventaire SET pickaxe = pickaxe + ? WHERE ID = ?""",(1,ID))
-		data.commit()
-		await client.send_message(message.channel, "tu as désormais une pioche en plus !")
-
-	if message.content.startswith('ba.mine'):
-		ID = message.author.id
-		c.execute("""SELECT time FROM donnees WHERE ID=?""", (ID,))
-		time = c.fetchone()
-		if time[0] < t.time()-anti_spam:
-			c.execute("""SELECT pickaxe FROM inventaire WHERE ID=?""", (ID,))
-			if c.fetchone()[0] >= 1:
-				if r.randint(0,19)==0:
-					c.execute("""UPDATE inventaire set pickaxe = pickaxe - ? WHERE ID=?""", (1,ID))
-					msg = "pas de chance tu as cassé ta pioche !"
-				else :
-					if r.randint(0,7)==0:
-						c.execute("""UPDATE inventaire set iron = iron + ? WHERE ID=?""", (1,ID))
-						msg = "tu as obtenue un bloc de iron !"
-					else:
-						c.execute("""UPDATE inventaire set cobblestone = cobblestone + ? WHERE ID=?""", (r.randint(1,2),ID))
-						msg = "tu as obtenue un bloc.s de cobblestone.s !"
-			else:
-				msg = "il faut acheter une pioche !"
-			c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
-		else:
-			msg = "il faut attendre "+str(anti_spam)+" secondes entre chaque commande !"
-		await client.send_message(message.channel, msg)
-		data.commit()
-
-
-	if message.content.startswith('ba.help'):
-		msg = "**Bienvenue dans l'aide de Bastion's gems !** \n Il y a actuellement 6 commandes :\n\
-		*-ba.begin* : permet de d'initialiser la base de donnée\n\
-		*-ba.crime* : permet de récolter entre 5 et 10 :gem:\n\
-		*-ba.bal* : permet de savoir combien on a dans son compte en banque !\n\
-		*-ba.buy pickaxe* : j'ai vraiment besoin d'expliquer celle là ?\n\
-		*-ba.mine* : en minant on récolte de la coble ou des minerais de iron (nécessite une pioche qui peut se briser)\n\
-		*-ba.gamble* : on mise, on perd.. on peut aussi triplé sa mise !(pas encore de plafond )\nBientot de nouvelles fonctionnalités ! "
-		await client.send_message(message.channel, msg)
-
-	if message.content.startswith('ba.inv'):
-		ID = message.author.id
-		c.execute("""SELECT time FROM donnees WHERE ID=?""", (ID,))
-		time = c.fetchone()
-		if time[0] < t.time()-anti_spam2:
-			c.execute("""UPDATE donnees SET time = ? WHERE ID = ?""",(t.time(),ID))
-			c.execute("""SELECT pickaxe,cobblestone,iron,gold,diamond FROM inventaire WHERE ID=?""", (ID,))
-			inv = c.fetchone()
-			print (inv)
-			msg = "**ton inventaire**\n```-pickaxe.s : "+str(inv[0])+"\n-cobblestone.s : "+str(inv[1])+"\n-iron.s : "+str(inv[2])+"\n-gold: "+str(inv[3])+"\n-diamond : "+str(inv[4])+"```"
-		else:
-			msg = "il faut attendre "+str(anti_spam2)+" secondes entre chaque commande !"
-		await client.send_message(message.channel, msg)
-		data.commit()
-
-
-	if message.content.startswith('ba.sell '):
-		ID = message.author.id
-		i = 0
-		content = message.content[8:]
-		item,nb = content.split(" ")
+@client.command(pass_context=True)
+async def sell (ctx,item,nb):
+	"""| sell [item] [nombre] |\nLes valeurs d'échange :\ncobblestone => 1\niron => 10"""
+	ID = ctx.message.author.id
+	if spam(ID,couldown_l):
 		try :
-			int(nb)
+			nb = int(nb)
 			mult = 0
-			print(item,nb)
 			if item == "cobblestone":
 				mult = 1
 			elif item =="iron":
@@ -196,27 +218,34 @@ async def on_message(message):
 		except ValueError:
 			msg = "commande mal remplis (nombre)"
 			pass
-		await client.send_message(message.channel, msg)
+	else:
+		msg = "il faut attendre "+str(couldown_l)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
 
-	if message.content.startswith('ba.pay '):
-		ID = message.author.id
-		content = message.content[7:]
-		nom,gain = content.split(" ")
-		if len(nom) == 21 :
-			ID_recu = nom[2:20]
-		elif len(nom) == 22 :
-			ID_recu = nom[3:21]
-		else :
-			ID_recu = "une autre erreur ?"
-		msg = "tu veux donner : "+gain+":gem: à "+nom+" dont l'id est "+ID_recu
-		print(msg)
-		await client.send_message(message.channel, msg)
+@client.command(pass_context=True)
+async def pay (ctx,nom,gain):
+	"""| pay [nom] [gain] |\n donner de l'argent à vos amis ! """
+	ID = ctx.message.author.id
+	if spam(ID,couldown_l):
+		try:
+			gain = int(gain)
+			if len(nom) == 21 :
+				ID_recu = nom[2:20]
+			elif len(nom) == 22 :
+				ID_recu = nom[3:21]
+			else :
+				ID_recu = "une autre erreur ?"
+			c.execute("""UPDATE donnees SET gem = gem - ? WHERE ID = ? """,(gain,ID))
+			c.execute("""UPDATE donnees SET gem = gem + ? WHERE ID = ? """,(gain,ID_recu))
+			data.commit()
+			msg = "<@{0}> donne {1}:gem: à <@{2}> !".format(ID,gain,ID_recu)
+		except ValueError:
+			msg = "la commande est mal formulée"
+			pass
+	else:
+		msg = "il faut attendre "+str(couldown_l)+" secondes entre chaque commande !"
+	await ctx.message.channel.send(msg)
 
-	if message.content.startswith('ba.rebdd') and message.author.id == 141883318915301376 :
-		data.commit()
-		data.close()
-		data = sqlite3.connect('players.db')
-		c = data.cursor()
 
 @client.event
 async def on_ready():
@@ -227,4 +256,3 @@ async def on_ready():
 	print('------')
 
 client.run(TOKEN)
-
